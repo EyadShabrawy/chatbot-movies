@@ -59,7 +59,7 @@ if 'initialized' not in st.session_state:
         prompt_template = """
         You are a friendly movie recommendation chatbot. Use the following pieces of context to answer the human's question. If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
-        When recommending movies or answering questions about movies, always include the movie name, genre, rating (out of 10), and a brief summary of the overview.
+        When recommending movies or answering questions about movies, always include the movie name, genre, rating (out of 100), and a brief summary of the overview.
 
         {context}
 
