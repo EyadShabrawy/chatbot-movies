@@ -20,22 +20,38 @@ def get_chat_model():
     openai_api_key = st.secrets["OPENAI_API_KEY"]
     return ChatOpenAI(openai_api_key=openai_api_key, model=chat_model_name)
 
-def initialize_vector_store(movie_data, embeddings):
+def create_new_vector_store(_embeddings, movie_data, faiss_index_path):
     movie_data['combined_text'] = movie_data.apply(lambda row: f"Movie: {row['names']}\nGenre: {row['genre']}\nRating: {row['score']}\nOverview: {row['overview']}", axis=1)
     texts = movie_data['combined_text'].tolist()
     metadatas = movie_data.to_dict('records')
-    return FAISS.from_texts(texts, embeddings, metadatas=metadatas)
+    vector_store = FAISS.from_texts(texts, _embeddings, metadatas=metadatas)
+    vector_store.save_local(faiss_index_path)
+    st.success("Created and saved new FAISS index.")
+    return vector_store
+
+@st.cache_resource
+def load_or_create_vector_store(_embeddings, movie_data):
+    faiss_index_path = 'faiss_index'
+    if os.path.exists(faiss_index_path):
+        try:
+            vector_store = FAISS.load_local(faiss_index_path, _embeddings, allow_dangerous_deserialization=True)
+            st.success("Loaded existing FAISS index.")
+        except Exception as e:
+            st.warning(f"Error loading existing index: {e}. Creating a new one.")
+            vector_store = create_new_vector_store(_embeddings, movie_data, faiss_index_path)
+    else:
+        vector_store = create_new_vector_store(_embeddings, movie_data, faiss_index_path)
+    return vector_store
 
 st.title("Movie Recommendation Chatbot")
 st.write("Chat with me about your movie preferences, and I'll recommend some films!")
-
 
 if 'initialized' not in st.session_state:
     with st.spinner("Initializing chatbot..."):
         csv_path = './data/imdb_movies.csv'
         movie_data = load_movie_data(csv_path)
         embeddings = get_embeddings()
-        vector_store = initialize_vector_store(movie_data, embeddings)
+        vector_store = load_or_create_vector_store(embeddings, movie_data)
         chat_model = get_chat_model()
         
         memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
@@ -63,7 +79,6 @@ if 'initialized' not in st.session_state:
         st.session_state.conversation_chain = conversation_chain
         st.session_state.chat_history = []
         st.session_state.initialized = True
-
 
 for message in st.session_state.chat_history:
     with st.chat_message(message["role"]):
