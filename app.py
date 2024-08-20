@@ -11,7 +11,7 @@ def load_movie_data(csv_path):
     return pd.read_csv(csv_path)
 
 def get_embeddings():
-    embedding_model_name = "text-embedding-ada-002"
+    embedding_model_name = "text-embedding-3-small"
     openai_api_key = st.secrets["OPENAI_API_KEY"]
     return OpenAIEmbeddings(model=embedding_model_name, openai_api_key=openai_api_key)
 
