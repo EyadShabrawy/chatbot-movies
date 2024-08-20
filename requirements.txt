@@ -4,4 +4,4 @@ langchain==0.0.174
 openai==0.27.6
 faiss-cpu==1.7.3
 langchain_openai==0.0.2
-langchain_community==0.0.2t
+langchain_community==0.0.2
